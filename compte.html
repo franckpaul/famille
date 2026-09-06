@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Espace Famille - Inscription & Connexion</title>
+  
+  <!-- SDK Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+    .card { max-width: 550px; margin: 20px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: #2c3e50; margin-bottom: 20px; }
+    
+    /* Navigation par onglets */
+    .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+    .tab-btn { flex: 1; padding: 12px; border: none; background: none; font-size: 1em; cursor: pointer; font-weight: bold; color: #7f8c8d; }
+    .tab-btn.active { color: #2980b9; border-bottom: 3px solid #2980b9; }
+
+    /* Formulaires */
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9em; }
+    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
+    .inline-group { display: flex; gap: 10px; }
+    .inline-group .form-group { flex: 1; }
+
+    /* Boutons */
+    .btn { width: 100%; padding: 12px; border: none; background-color: #27ae60; color: white; font-weight: bold; border-radius: 4px; cursor: pointer; font-size: 1em; margin-top: 10px; }
+    .btn-login { background-color: #2980b9; }
+    .btn-print { background-color: #7f8c8d; margin-top: 5px; }
+    .btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+    .btn:hover:not(:disabled) { opacity: 0.9; }
+
+    /* Règles de mot de passe */
+    .rules { font-size: 0.8em; color: #555; background: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 8px; border: 1px solid #e9ecef; }
+    .rule-item { margin: 3px 0; color: #e74c3c; }
+    .rule-item.valid { color: #27ae60; }
+
+    /* Alertes */
+    #message { margin-bottom: 15px; padding: 12px; border-radius: 4px; display: none; text-align: center; font-weight: 500; font-size: 0.9em; }
+    .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+    /* Impression / Export PDF */
+    @media print {
+      body { background-color: white; padding: 0; }
+      .card { box-shadow: none; border: none; width: 100%; max-width: 100%; padding: 0; }
+      .tabs, .btn, .rules, #message { display: none !important; }
+      input { border: none; border-bottom: 1px solid #000; border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showForm('signup')">Inscription</button>
+      <button class="tab-btn" onclick="showForm('login')">Connexion</button>
+    </div>
+
+    <div id="message"></div>
+
+    <!-- FORMULAIRE D'INSCRIPTION -->
+    <form id="signupForm">
+      <h2>Créer un compte familial</h2>
+
+      <div class="inline-group">
+        <div class="form-group">
+          <label for="reg-nom">Nom :</label>
+          <input type="text" id="reg-nom" required placeholder="Votre nom">
+        </div>
+        <div class="form-group">
+          <label for="reg-prenom">Prénom :</label>
+          <input type="text" id="reg-prenom" required placeholder="Votre prénom">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="reg-email">Identifiant unique (Email) :</label>
+        <input type="email" id="reg-email" required placeholder="exemple@famille.com">
+      </div>
+
+      <div class="inline-group">
+        <div class="form-group">
+          <label for="reg-tel">Téléphone :</label>
+          <input type="tel" id="reg-tel" required placeholder="+237 ...">
+        </div>
+        <div class="form-group">
+          <label for="reg-branche">Branche Familiale :</label>
+          <input type="text" id="reg-branche" placeholder="Lignée / Ancêtre direct">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="reg-password">Mot de passe sécurisé :</label>
+        <input type="password" id="reg-password" required placeholder="••••••••">
+        
+        <div class="rules">
+          <div id="rule-len" class="rule-item">✖ Au moins 8 caractères</div>
+          <div id="rule-upper" class="rule-item">✖ Au moins 1 majuscule (A-Z)</div>
+          <div id="rule-lower" class="rule-item">✖ Au moins 1 minuscule (a-z)</div>
+          <div id="rule-num" class="rule-item">✖ Au moins 1 chiffre (0-9)</div>
+          <div id="rule-spec" class="rule-item">✖ Au moins 1 caractère spécial (@, #, $, %, etc.)</div>
+        </div>
+      </div>
+
+      <button type="submit" id="btn-signup" class="btn" disabled>S'inscrire</button>
+      <button type="button" class="btn btn-print" onclick="window.print()">Imprimer la fiche</button>
+    </form>
+
+    <!-- FORMULAIRE DE CONNEXION -->
+    <form id="loginForm" style="display: none;">
+      <h2>Espace Membre - Connexion</h2>
+      <div class="form-group">
+        <label for="login-email">Identifiant (Email) :</label>
+        <input type="email" id="login-email" required placeholder="exemple@famille.com">
+      </div>
+      <div class="form-group">
+        <label for="login-password">Mot de passe :</label>
+        <input type="password" id="login-password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn btn-login">Se connecter</button>
+    </form>
+  </div>
+
+    <script>
+    // Configuration Supabase
+    const SUPABASE_URL = "https://psolwuakaayshdqwxixl.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzb2x3dWFrYWF5c2hkcXd4aXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2NTU1NzcsImV4cCI6MjEwNDIzMTU3N30.4aARNkckvcyEBWXDzKpBMoW3f4chLngsCLmv3dfYwp4";
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Navigation entre les onglets
+    function showForm(type) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      if (type === 'signup') {
+        document.getElementById('signupForm').style.display = 'block';
+        document.getElementById('loginForm').style.display = 'none';
+        event.target.classList.add('active');
+      } else {
+        document.getElementById('signupForm').style.display = 'none';
+        document.getElementById('loginForm').style.display = 'block';
+        event.target.classList.add('active');
+      }
+      hideMessage();
+    }
+
+    // Contrôle dynamique des exigences du mot de passe
+    const pwdInput = document.getElementById('reg-password');
+    const btnSignup = document.getElementById('btn-signup');
+
+    if (pwdInput) {
+      pwdInput.addEventListener('input', () => {
+        const val = pwdInput.value;
+        const isLen = val.length >= 8;
+        const isUpper = /[A-Z]/.test(val);
+        const isLower = /[a-z]/.test(val);
+        const isNum = /[0-9]/.test(val);
+        const isSpec = /[^A-Za-z0-9]/.test(val);
+
+        updateRule('rule-len', isLen, "Au moins 8 caractères");
+        updateRule('rule-upper', isUpper, "Au moins 1 majuscule (A-Z)");
+        updateRule('rule-lower', isLower, "Au moins 1 minuscule (a-z)");
+        updateRule('rule-num', isNum, "Au moins 1 chiffre (0-9)");
+        updateRule('rule-spec', isSpec, "Au moins 1 caractère spécial (@, #, $, etc.)");
+
+        btnSignup.disabled = !(isLen && isUpper && isLower && isNum && isSpec);
+      });
+    }
+
+    function updateRule(elementId, isValid, text) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      if (isValid) {
+        el.classList.add('valid');
+        el.innerText = "✔ " + text;
+      } else {
+        el.classList.remove('valid');
+        el.innerText = "✖ " + text;
+      }
+    }
+
+    // Traitement de l'inscription
+    document.getElementById('signupForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('reg-email').value;
+      const password = pwdInput.value;
+      const nom = document.getElementById('reg-nom').value;
+      const prenom = document.getElementById('reg-prenom').value;
+      const telephone = document.getElementById('reg-tel').value;
+      const branche = document.getElementById('reg-branche').value;
+
+      // 1. Inscription dans Supabase Auth
+      const { data: authData, error: authError } = await _supabase.auth.signUp({
+        email: email,
+        password: password
+      });
+
+      if (authError) {
+        showMessage("Erreur : " + authError.message, 'error');
+        return;
+      }
+
+      const userId = authData.user?.id;
+
+      if (userId) {
+        // 2. Insertion dans public.profiles
+        const { error: profileError } = await _supabase
+          .from('profiles')
+          .insert([
+            {
+              id: userId,
+              nom: nom,
+              prenom: prenom,
+              telephone: telephone,
+              branche: branche
+            }
+          ]);
+
+        if (profileError) {
+          showMessage("Compte créé mais erreur profil : " + profileError.message, 'error');
+        } else {
+          showMessage("Inscription réussie ! Redirection...", 'success');
+          // Redirection vers index.html après 1.5 seconde
+          setTimeout(() => { window.location.href = "index.html"; }, 1500);
+        }
+      }
+    });
+
+    // Traitement de la connexion
+    document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        showMessage("Identifiant ou mot de passe incorrect.", 'error');
+      } else {
+        showMessage("Connexion réussie ! Redirection...", 'success');
+        // Redirection vers index.html après 1.5 seconde
+        setTimeout(() => { window.location.href = "index.html"; }, 1500);
+      }
+    });
+
+    // Affichage des notifications
+    function showMessage(msg, type) {
+      const box = document.getElementById('message');
+      if (!box) return;
+      box.innerText = msg;
+      box.className = type;
+      box.style.display = 'block';
+    }
+
+    function hideMessage() {
+      const box = document.getElementById('message');
+      if (box) box.style.display = 'none';
+    }
+  </script>
+</body>
+</html>

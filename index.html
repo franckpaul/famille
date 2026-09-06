@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portail Familial Bafou - Rassemblement & Patrimoine</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- SDK Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --ndop-blue: #142433;
+      --terracotta: #8B3A2B;
+      --gold-royal: #D4AF37;
+      --gold-light: #F4E7BF;
+      --sand-bg: #F8F5EE;
+      --card-bg: #FFFFFF;
+      --text-dark: #1E2022;
+      --text-muted: #5A6065;
+      --border-color: #E2D7C5;
+      --radius: 10px;
+    }
+
+    body.dark-mode {
+      --ndop-blue: #0A121A;
+      --sand-bg: #12181F;
+      --card-bg: #1A232E;
+      --text-dark: #EAEFF5;
+      --text-muted: #9BA7B4;
+      --border-color: #2D3A4A;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+    
+    body { 
+      font-family: 'Plus Jakarta Sans', sans-serif; 
+      background-color: var(--sand-bg); 
+      color: var(--text-dark); 
+      line-height: 1.6;
+    }
+
+    /* Motif Ndop géométrique Bamiléké */
+    .ndop-pattern-banner {
+      height: 10px;
+      background: repeating-linear-gradient(
+        45deg,
+        var(--ndop-blue),
+        var(--ndop-blue) 12px,
+        #ffffff 12px,
+        #ffffff 22px,
+        var(--gold-royal) 22px,
+        var(--gold-royal) 28px
+      );
+    }
+
+    /* En-tête Sticky */
+    header { 
+      background-color: var(--ndop-blue); 
+      color: white; 
+      padding: 14px 24px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25); 
+      position: sticky; 
+      top: 0; 
+      z-index: 1000; 
+      border-bottom: 3px solid var(--gold-royal);
+    }
+
+    header h1 { 
+      font-family: 'Cinzel', serif;
+      font-size: 1.35em; 
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--gold-royal);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-actions { display: flex; align-items: center; gap: 15px; font-size: 0.9em; }
+    
+    .theme-toggle {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid var(--gold-royal);
+      color: var(--gold-royal);
+      border-radius: 20px;
+      padding: 5px 12px;
+      cursor: pointer;
+      font-size: 0.85em;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-auth { 
+      background-color: var(--terracotta); 
+      color: white; 
+      border: 1px solid var(--gold-royal); 
+      padding: 8px 18px; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      font-weight: 600; 
+      text-decoration: none; 
+      font-size: 0.88em; 
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .btn-auth.login { background-color: #27ae60; }
+    .btn-auth:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* Hero Banner */
+    .hero { 
+      background: linear-gradient(rgba(20, 36, 51, 0.90), rgba(139, 58, 43, 0.85)), 
+                  url('https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&w=1200&q=80') center/cover; 
+      color: white; 
+      text-align: center; 
+      padding: 45px 20px; 
+      border-bottom: 4px solid var(--gold-royal);
+    }
+
+    .hero h2 { 
+      font-family: 'Cinzel', serif;
+      font-size: 2.3em; 
+      margin-bottom: 10px; 
+      color: var(--gold-royal);
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+    }
+
+    .hero p { 
+      font-size: 1.05em; 
+      max-width: 750px; 
+      margin: 0 auto 20px auto; 
+      font-style: italic;
+      opacity: 0.95;
+    }
+
+    /* Stat Bar */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      padding: 8px 18px;
+      border-radius: 8px;
+      min-width: 130px;
+    }
+
+    .stat-item .num { font-weight: 800; font-size: 1.2em; color: var(--gold-royal); }
+    .stat-item .label { font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Menu Déroulant (Dropdown Nav) */
+    .dropdown-nav-container {
+      background: var(--card-bg);
+      padding: 14px 20px;
+      border-bottom: 2px solid var(--border-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+      position: sticky;
+      top: 61px;
+      z-index: 999;
+    }
+
+    .dropdown-label {
+      font-weight: 700;
+      color: var(--ndop-blue);
+      font-size: 0.95em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    body.dark-mode .dropdown-label { color: var(--gold-royal); }
+
+    .custom-dropdown-select {
+      background-color: var(--sand-bg);
+      color: var(--text-dark);
+      font-weight: 700;
+      font-size: 0.98em;
+      padding: 10px 18px;
+      border: 2px solid var(--gold-royal);
+      border-radius: 8px;
+      cursor: pointer;
+      outline: none;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    .custom-dropdown-select:focus {
+      border-color: var(--terracotta);
+    }
+
+    /* Main Container */
+    .container { max-width: 1050px; margin: 30px auto; padding: 0 16px; }
+
+    /* Sections */
+    .tab-content { display: none; animation: fadeIn 0.35s ease-in-out; }
+    .tab-content.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card { 
+      background: var(--card-bg); 
+      padding: 24px; 
+      border-radius: var(--radius); 
+      box-shadow: 0 4px 16px rgba(0,0,0,0.05); 
+      margin-bottom: 25px; 
+      border-left: 5px solid var(--terracotta); 
+      border-right: 1px solid var(--border-color);
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .card h3 { 
+      font-family: 'Cinzel', serif;
+      color: var(--ndop-blue); 
+      margin-bottom: 16px; 
+      font-size: 1.3em; 
+      border-bottom: 2px solid var(--sand-bg); 
+      padding-bottom: 10px; 
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    body.dark-mode .card h3 { color: var(--gold-royal); }
+
+    /* Chronologie Chefferie */
+    .timeline { position: relative; padding: 10px 0 10px 20px; border-left: 3px solid var(--gold-royal); }
+    .timeline-item { margin-bottom: 22px; position: relative; padding-left: 18px; }
+    .timeline-item::before { 
+      content: '👑'; 
+      position: absolute; 
+      left: -32px; 
+      top: -2px; 
+      background: var(--sand-bg); 
+      border-radius: 50%; 
+      font-size: 0.9em; 
+      padding: 2px;
+    }
+    .timeline-date { font-weight: 700; color: var(--terracotta); font-size: 0.85em; text-transform: uppercase; }
+    .timeline-title { font-weight: 700; color: var(--ndop-blue); font-size: 1.1em; }
+    body.dark-mode .timeline-title { color: #FFF; }
+    .timeline-desc { font-size: 0.92em; color: var(--text-muted); margin-top: 4px; }
+
+    /* Formulaires */
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-weight: 700; font-size: 0.88em; margin-bottom: 6px; color: var(--ndop-blue); }
+    body.dark-mode label { color: var(--gold-royal); }
+    
+    input, select, textarea { 
+      width: 100%; 
+      padding: 11px 14px; 
+      border: 1px solid var(--border-color); 
+      border-radius: 6px; 
+      font-size: 0.95em; 
+      background-color: var(--sand-bg); 
+      color: var(--text-dark);
+      font-family: inherit;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--terracotta); outline: none; background: var(--card-bg); }
+    
+    .btn-action { 
+      background-color: var(--terracotta); 
+      color: white; 
+      border: 1px solid var(--gold-royal); 
+      padding: 12px 22px; 
+      border-radius: 6px; 
+      font-weight: 700; 
+      cursor: pointer; 
+      margin-top: 10px; 
+      width: 100%; 
+      font-size: 0.95em; 
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-action:hover { opacity: 0.92; }
+
+    /* Grille Annuaire */
+    .member-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .member-card { 
+      background: var(--sand-bg); 
+      border: 1px solid var(--border-color); 
+      padding: 16px; 
+      border-radius: 8px; 
+      border-left: 4px solid var(--ndop-blue);
+    }
+    .member-card h4 { color: var(--terracotta); margin-bottom: 6px; font-size: 1.08em; }
+    .member-card p { font-size: 0.88em; color: var(--text-muted); margin: 4px 0; }
+
+    /* Galerie Photos / Vidéos */
+    .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    .photo-card { background: var(--card-bg); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid var(--border-color); }
+    .photo-card img, .photo-card video, .photo-card iframe { width: 100%; height: 200px; object-fit: cover; display: block; border: none; }
+    .photo-info { padding: 14px; }
+    .photo-info h4 { font-size: 1.02em; color: var(--ndop-blue); margin-bottom: 6px; }
+    body.dark-mode .photo-info h4 { color: #FFF; }
+    .photo-info p { font-size: 0.88em; color: var(--text-muted); }
+    .photo-meta { font-size: 0.78em; color: var(--text-muted); margin-top: 10px; display: flex; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 8px; }
+
+    /* Bouton d'importation de dossier local */
+    .upload-btn-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+
+    .btn-upload {
+      border: 2px solid var(--terracotta);
+      color: white;
+      background-color: var(--terracotta);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      display: inline-block;
+    }
+
+    .upload-btn-wrapper input[type=file] {
+      font-size: 100px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* Grille pour l'importation locale */
+    .gallery-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .gallery-card {
+      background: var(--sand-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      aspect-ratio: 1 / 1;
+    }
+
+    .gallery-card img,
+    .gallery-card video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Feed Annonces */
+    .post { border-left: 4px solid var(--gold-royal); padding: 16px; background: var(--sand-bg); border-radius: 0 8px 8px 0; margin-bottom: 16px; border-top: 1px solid var(--border-color); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+    .post-header { display: flex; justify-content: space-between; font-size: 0.82em; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
+    .post-title { font-weight: 700; color: var(--terracotta); margin-bottom: 6px; font-size: 1.1em; }
+    .post-body { font-size: 0.94em; color: var(--text-dark); }
+
+    /* Émargement / Présence */
+    .status-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 0.88em; font-weight: 700; margin-top: 6px; }
+    .status-present { background-color: #D4EDDA; color: #155724; border: 1px solid #C3E6CB; }
+    .status-absent { background-color: #F8D7DA; color: #721C24; border: 1px solid #F5C6CB; }
+
+    /* Progress Bar Cotisations */
+    .progress-bar-bg { background-color: var(--border-color); border-radius: 12px; height: 22px; width: 100%; overflow: hidden; margin: 12px 0; }
+    .progress-bar-fill { background-color: var(--terracotta); height: 100%; width: 0%; border-radius: 12px; text-align: center; color: white; font-size: 0.82em; line-height: 22px; font-weight: 700; transition: width 0.6s ease; }
+
+    /* Toast Notification */
+    #toastContainer {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .toast {
+      background: var(--ndop-blue);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      border-left: 4px solid var(--gold-royal);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      font-size: 0.9em;
+      font-weight: 600;
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+    /* Footer */
+    footer { text-align: center; padding: 30px 20px; margin-top: 50px; background-color: var(--ndop-blue); color: white; font-size: 0.88em; border-top: 4px solid var(--gold-royal); }
+
+    /* Print styling */
+    @media print {
+      header, .hero, .dropdown-nav-container, footer, .btn-action, #publishCard, #uploadPhotoCard { display: none !important; }
+      .container { max-width: 100%; margin: 0; }
+      .tab-content { display: block !important; }
+      .card { border: 1px solid #000; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer"></div>
+
+  <!-- Motif Ndop Bamiléké -->
+  <div class="ndop-pattern-banner"></div>
+
+  <!-- En-tête Sticky -->
+  <header>
+    <h1>👑 Portail Familial NDI WAMBA Bafou</h1>
+    <div class="header-actions">
+      <button class="theme-toggle" onclick="toggleDarkMode()" title="Changer le thème">
+        <span id="themeIcon">🌙</span> <span id="themeLabel">Mode Sombre</span>
+      </button>
+      <span id="userNameDisplay" style="font-size: 0.9em; opacity: 0.9;">Chargement...</span>
+      <button id="authBtn" class="btn-auth" onclick="handleAuthAction()" style="display:none;"></button>
+    </div>
+  </header>
+
+  <!-- Hero Banner avec Statistiques -->
+  <section class="hero">
+    <h2>Rassemblement & Fraternité de la Famille NDI WAMBA</h2>
+    <p>« La force du baobab réside dans ses racines. » — Unir les enfants Bafou, préserver l'héritage ancestral et bâtir l'avenir de nos concessions.</p>
+    
+    <div class="stats-bar">
+      <div class="stat-item"><div class="num" id="statMembers">0</div><div class="label">Membres</div></div>
+      <div class="stat-item"><div class="num" id="statAttendees">0</div><div class="label">Présents Congrès</div></div>
+      <div class="stat-item"><div class="num" id="statPhotos">0</div><div class="label">Médias Galerie</div></div>
+      <div class="stat-item"><div class="num" id="statPosts">0</div><div class="label">Annonces</div></div>
+    </div>
+  </section>
+
+  <!-- Navigation par MENU DÉROULANT -->
+  <div class="dropdown-nav-container">
+    <label for="mainNavigationSelect" class="dropdown-label">📌 Navigation :</label>
+    <select id="mainNavigationSelect" class="custom-dropdown-select" onchange="switchTabFromDropdown(this.value)">
+      <option value="histoire">📜 Histoire & Chefferie Bafou</option>
+      <option value="annuaire">🌳 Annuaire & Lignées Familiales</option>
+      <option value="annonces">📢 Communiqués & Nkap</option>
+      <option value="photos">🖼️ Galerie Photos & Vidéos</option>
+      <option value="presence">📝 Émargement & Registre Congrès</option>
+      <option value="cotisations">💰 Caisse & Solidarité Nkap</option>
+    </select>
+  </div>
+
+  <div class="container">
+
+    <!-- 1. HISTOIRE ET CHRONOLOGIE DE LA CHEFFERIE -->
+    <div id="tab-histoire" class="tab-content active">
+      <div class="card">
+        <h3>🗿 Histoire du Groupement Bafou (Poh-Fouh)</h3>
+        <p style="margin-bottom: 12px; color: var(--text-dark);">
+          Le nom <strong>Bafou</strong> vient du terme <em>Poh-Fouh</em> en langue Yemba. <em>Poh</em> signifie « Les gens » et <em>Fouh</em> désigne « se multiplier rapidement et persévérer ». Bafou exprime ainsi <strong>« Le peuple dynamique qui grandit et persévère »</strong>.
+        </p>
+        <p style="color: var(--text-dark);">
+          Fondé au XVIᵉ siècle par le chasseur mythique <strong>Tala</strong> venu de Baleveng, le groupement Bafou est devenu la plus vaste chefferie du département de la Menoua à l'Ouest-Cameroun, structurée autour du Conseil des Neuf Notables (<em>Mekem Levouoh</em>) et des 5 grands secteurs (Latsuet, Ndzinkop, Mbeng, Ndziih, Balefock).
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>👑 Chronologie des Chefs Supérieurs (*Fo*) Bafou</h3>
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-date">XVIᵉ siècle</div>
+            <div class="timeline-title">Fo Tala & Fo Djeumetotchou</div>
+            <div class="timeline-desc">Pères fondateurs. Tala instaure le premier campement à Menlepêh avant que Djeumetotchou ne structure la souveraineté territoriale avec le conseil des dignitaires.</div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-date">XIXᵉ siècle</div>
+            <div class="timeline-title">Fo Tendeng (Fo Ndeng)</div>
+            <div class="timeline-desc">Grand souverain guerrier qui renforça la sécurité et l'influence de Bafou dans toute la région de la Menoua.</div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-date">Début XXᵉ siècle - 1954</div>
+            <div class="timeline-title">Fo Kana I (Kana Tonfack)</div>
+            <div class="timeline-desc">Règne marqué par le passage au XXᵉ siècle et la gestion des contacts avec l'administration coloniale tout en préservant le secret coutumier.</div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-date">1954 – 2021</div>
+            <div class="timeline-title">Fo Kana II (Victor Kana II)</div>
+            <div class="timeline-desc">Un règne historique de 67 ans. Bâtisseur de la modernisation du village, promotion des écoles, des infrastructures et de la culture Yemba à l'international.</div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-date">Depuis Février 2021</div>
+            <div class="timeline-title">Fo Ngouadjio II Victor</div>
+            <div class="timeline-desc">Roi actuel de Bafou. Intronisé selon la tradition par le Conseil des Neuf Notables pour conduire la communauté vers l'unité et le développement socio-économique.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. ANNUAIRE DES MEMBRES -->
+    <div id="tab-annuaire" class="tab-content">
+      <div class="card">
+        <h3>🌳 Annuaire et Lignées Familiales</h3>
+        <div style="margin-bottom: 18px;">
+          <input type="text" id="searchMember" placeholder="🔍 Rechercher par nom, prénom, quartier ou branche Bafou..." oninput="filterMembers()">
+        </div>
+        <div class="member-grid" id="membersList">
+          <p style="color: var(--text-muted);">Chargement de l'annuaire...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. COMMUNIQUÉS ET ANNONCES -->
+    <div id="tab-annonces" class="tab-content">
+      <div class="card" id="publishCard" style="display: none; border-left-color: var(--gold-royal);">
+        <h3>📢 Publier une Annonce au Conseil de Famille</h3>
+        <div class="form-group">
+          <label for="postTitle">Sujet / Objet :</label>
+          <input type="text" id="postTitle" placeholder="ex: Convocation Grande Réunion, Cérémonie d'Hommage...">
+        </div>
+        <div class="form-group">
+          <label for="postContent">Message officiel :</label>
+          <textarea id="postContent" rows="3" placeholder="Rédigez le message à l'attention de la famille..."></textarea>
+        </div>
+        <button class="btn-action" onclick="publishAnnouncement()">📢 Publier le communiqué</button>
+      </div>
+
+      <div class="card">
+        <h3>📜 Fil des Communiqués & Annonces</h3>
+        <div id="newsFeed">
+          <p style="color: var(--text-muted);">Chargement des annonces...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. GALERIE PHOTOS ET VIDÉOS PAR DOSSIERS -->
+    <div id="tab-photos" class="tab-content">
+      <!-- Formulaire d'envoi de média sur Supabase -->
+      <div class="card" id="uploadPhotoCard" style="display: none; border-left-color: var(--gold-royal);">
+        <h3>📸 / 🎥 Ajouter un Média à la Galerie</h3>
+        
+        <div class="form-group">
+          <label for="mediaDossier">Album / Événement :</label>
+          <input type="text" id="mediaDossier" placeholder="ex: Congrès Bafou 2026, Cérémonie Traditionnelle..." list="dossiersList">
+          <datalist id="dossiersList"></datalist>
+        </div>
+
+        <div class="form-group">
+          <label for="mediaType">Format :</label>
+          <select id="mediaType">
+            <option value="image">📷 Photo / Image</option>
+            <option value="video">🎥 Vidéo (Lien YouTube / MP4)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="photoTitle">Titre de la photo / vidéo :</label>
+          <input type="text" id="photoTitle" placeholder="ex: Danse des Notables, Photo de famille...">
+        </div>
+
+        <div class="form-group">
+          <label for="photoUrl">Lien URL du fichier :</label>
+          <input type="url" id="photoUrl" placeholder="https://... (Lien image directe ou lien YouTube)">
+        </div>
+
+        <div class="form-group">
+          <label for="photoDesc">Légende :</label>
+          <textarea id="photoDesc" rows="2" placeholder="Précisez la date, le lieu ou les personnes présentes..."></textarea>
+        </div>
+
+        <button class="btn-action" style="background-color: var(--ndop-blue);" onclick="addPhoto()"> Enregistrer dans la galerie</button>
+      </div>
+
+      <!-- Galerie principale de la communauté -->
+      <div class="card">
+        <h3>🖼️ Galerie Familiale & Patrimoine</h3>
+        
+        <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+          <select id="filterDossierSelect" onchange="filterPhotos()" style="flex: 1; min-width: 180px;">
+            <option value="ALL">📁 Tous les albums</option>
+          </select>
+          
+          <input type="text" id="searchPhoto" placeholder="🔍 Rechercher par mot-clé..." oninput="filterPhotos()" style="flex: 2; min-width: 200px;">
+        </div>
+
+        <div class="gallery-grid" id="photosList">
+          <p style="color: var(--text-muted);">Chargement des médias...</p>
+        </div>
+      </div>
+
+      <!-- Module de chargement d'un dossier d'images/vidéos local -->
+      <div class="card">
+        <h3>📂 Charger un Dossier d'Images/Vidéos Local</h3>
+        <p style="font-size: 0.9em; color: var(--text-muted); margin-bottom: 15px;">
+          Sélectionnez un dossier complet depuis votre ordinateur ou téléphone pour afficher immédiatement vos médias sur cette page.
+        </p>
+
+        <div class="upload-btn-wrapper">
+          <label for="folderInput" class="btn-upload">📁 Choisir un dossier local</label>
+          <input type="file" id="folderInput" webkitdirectory directory multiple accept="image/*,video/*" />
+        </div>
+
+        <div id="localGallery" class="gallery-container"></div>
+      </div>
+    </div>
+
+    <!-- 5. ÉMARGEMENT AUX CONGRÈS ET RÉUNIONS -->
+    <div id="tab-presence" class="tab-content">
+      <div class="card">
+        <h3>📝 Émargement Officiel - Congrès Familial</h3>
+        <p style="font-size: 0.92em; color: var(--text-muted); margin-bottom: 15px;">
+          Confirmez votre présence effective au prochain rassemblement de la famille au village.
+        </p>
+
+        <div id="presenceStatusArea" style="background: var(--sand-bg); border: 1px solid var(--border-color); padding: 18px; border-radius: 8px; margin-bottom: 16px; text-align: center;">
+          <p><strong>Statut personnel :</strong> <span id="currentPresenceStatus" class="status-badge status-absent">Non confirmé</span></p>
+        </div>
+
+        <button id="btnTogglePresence" class="btn-action" style="background-color: #27ae60;" onclick="togglePresence()" disabled>
+          ✍️ Confirmer ma présence au Congrès
+        </button>
+      </div>
+
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid var(--sand-bg); padding-bottom: 8px;">
+          <h3 style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">👥 Liste des Membres Confirmés</h3>
+          <button onclick="window.print()" style="background: var(--ndop-blue); color: var(--gold-royal); border: 1px solid var(--gold-royal); padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.82em;">🖨️ Imprimer la Liste</button>
+        </div>
+        
+        <ul id="confirmedAttendeesList" style="list-style-type: square; padding-left: 22px; font-size: 0.95em; color: var(--text-dark);">
+          <li>Chargement de la liste...</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 6. COTISATIONS ET SOLIDARITÉ -->
+    <div id="tab-cotisations" class="tab-content">
+      <div class="card">
+        <h3>💰 Caisse de Solidarité & Projets de la Famille</h3>
+        <p style="font-size: 0.92em; color: var(--text-muted);">Suivi en temps réel des contributions pour les cérémonies, le congrès et l'entraide.</p>
+
+        <div style="margin: 22px 0;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.88em; font-weight: 700; color: var(--ndop-blue);">
+            <span id="cotisationTotalText">Calcul du fonds...</span>
+            <span id="cotisationPercentText">0% Réalisé</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill">0% Collecté</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🏛️ Répartition des Caisses</h3>
+        <div class="member-grid">
+          <div class="member-card" style="border-left-color: var(--terracotta);">
+            <h4>Fonds du Congrès</h4>
+            <p>Organisation, restauration et accueil lors des congrès annuels Bafou.</p>
+          </div>
+          <div class="member-card" style="border-left-color: var(--gold-royal);">
+            <h4>Nkap Solidarité</h4>
+            <p>Assistance mutuelle lors des grands événements familiaux et soutien aux concessions.</p>
+          </div>
+          <div class="member-card" style="border-left-color: var(--ndop-blue);">
+            <h4>Bourse Jeunesse</h4>
+            <p>Accompagnement des jeunes membres dans leurs parcours académiques et projets.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Pied de page -->
+  <footer>
+    <p>&copy; Portail Officiel de la Grande Famille NDI WAMBA - Bafou, Menoua, Cameroun.</p>
+    <p style="font-size: 0.85em; margin-top: 6px; color: var(--gold-royal); font-family: 'Cinzel', serif;">Conçu et développé par <strong>NANFACK AZEBAZE PAUL FRANCK</strong></p>
+    <p style="font-size: 0.82em; margin-top: 6px; color: var(--gold-royal); font-family: 'Cinzel', serif;">Union - Respect du Patrimoine - Solidarité</p>
+  </footer>
+
+  <script>
+    // Configuration Supabase
+    const SUPABASE_URL = "https://psolwuakaayshdqwxixl.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzb2x3dWFrYWF5c2hkcXd4aXhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2NTU1NzcsImV4cCI6MjEwNDIzMTU3N30.4aARNkckvcyEBWXDzKpBMoW3f4chLngsCLmv3dfYwp4";
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Variables globales
+    const OBJECTIF_CONGRES = 1000000;
+    let currentUser = null;
+    let userProfile = null;
+    let allMembers = [];
+    let allPhotos = [];
+    let isConfirmedPresent = false;
+    let localObjectUrls = [];
+
+    // Toast Notification System
+    function showToast(message) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerText = message;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Gestion du Mode Sombre / Mode Clair
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      document.getElementById('themeIcon').innerText = isDark ? '☀️' : '🌙';
+      document.getElementById('themeLabel').innerText = isDark ? 'Mode Clair' : 'Mode Sombre';
+    }
+
+    // Navigation par Menu Déroulant
+    function switchTabFromDropdown(tabName) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      const activeTab = document.getElementById('tab-' + tabName);
+      if (activeTab) {
+        activeTab.classList.add('active');
+      }
+    }
+
+    // Vérification de la Session Supabase
+    async function checkUserSession() {
+      const nameDisplay = document.getElementById('userNameDisplay');
+      const authBtn = document.getElementById('authBtn');
+      const publishCard = document.getElementById('publishCard');
+      const uploadPhotoCard = document.getElementById('uploadPhotoCard');
+      const btnTogglePresence = document.getElementById('btnTogglePresence');
+
+      const { data: { session } } = await _supabase.auth.getSession();
+
+      if (session && session.user) {
+        currentUser = session.user;
+        
+        const { data: profile } = await _supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (profile) {
+          userProfile = profile;
+          nameDisplay.innerText = `👋 ${profile.prenom} ${profile.nom}`;
+        } else {
+          nameDisplay.innerText = `👤 ${currentUser.email}`;
+        }
+
+        authBtn.innerText = "Déconnexion";
+        authBtn.className = "btn-auth";
+        authBtn.style.display = "inline-block";
+        if (publishCard) publishCard.style.display = "block";
+        if (uploadPhotoCard) uploadPhotoCard.style.display = "block";
+        if (btnTogglePresence) btnTogglePresence.disabled = false;
+      } else {
+        nameDisplay.innerText = "Visiteur";
+        authBtn.innerText = "Se connecter";
+        authBtn.className = "btn-auth login";
+        authBtn.style.display = "inline-block";
+        if (publishCard) publishCard.style.display = "none";
+        if (uploadPhotoCard) uploadPhotoCard.style.display = "none";
+        if (btnTogglePresence) btnTogglePresence.disabled = true;
+      }
+
+      // Chargement initial des données
+      loadMembers();
+      loadAnnonces();
+      loadPhotos();
+      loadPresenceList();
+      loadCotisations();
+    }
+
+    // Authentification
+    async function handleAuthAction() {
+      if (currentUser) {
+        await _supabase.auth.signOut();
+        showToast("Vous avez été déconnecté.");
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        window.location.href = "compte.html";
+      }
+    }
+
+    // 1. ANNUAIRE ET STATISTIQUES MEMBRES
+    async function loadMembers() {
+      const container = document.getElementById('membersList');
+      const { data: profiles, error } = await _supabase
+        .from('profiles')
+        .select('nom, prenom, telephone, branche');
+
+      if (error || !profiles) {
+        container.innerHTML = "<p style='color: var(--text-muted);'>Impossible de charger l'annuaire.</p>";
+        return;
+      }
+
+      allMembers = profiles;
+      document.getElementById('statMembers').innerText = profiles.length;
+      renderMembers(allMembers);
+    }
+
+    function renderMembers(list) {
+      const container = document.getElementById('membersList');
+      if (list.length === 0) {
+        container.innerHTML = "<p style='color: var(--text-muted);'>Aucun membre trouvé.</p>";
+        return;
+      }
+
+      container.innerHTML = list.map(m => `
+        <div class="member-card">
+          <h4>${m.prenom || ''} ${m.nom || ''}</h4>
+          <p><strong>Branche / Quartier :</strong> ${m.branche || 'Non spécifié'}</p>
+          <p><strong>Contact :</strong> ${m.telephone || 'Non renseigné'}</p>
+        </div>
+      `).join('');
+    }
+
+    function filterMembers() {
+      const query = document.getElementById('searchMember').value.toLowerCase();
+      const filtered = allMembers.filter(m => 
+        (m.nom && m.nom.toLowerCase().includes(query)) ||
+        (m.prenom && m.prenom.toLowerCase().includes(query)) ||
+        (m.branche && m.branche.toLowerCase().includes(query))
+      );
+      renderMembers(filtered);
+    }
+
+    // 2. FIL D'ANNONCES
+    async function loadAnnonces() {
+      const container = document.getElementById('newsFeed');
+      const { data: annonces, error } = await _supabase
+        .from('annonces')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error || !annonces || annonces.length === 0) {
+        document.getElementById('statPosts').innerText = 1;
+        container.innerHTML = `
+          <div class="post">
+            <div class="post-header"><span>Conseil de Famille</span><span>Aujourd'hui</span></div>
+            <div class="post-title">Bienvenue sur le portail familial Bafou !</div>
+            <div class="post-body">Paix et fraternité à tous les fils et filles. Les réunions, événements et cérémonies seront communiqués sur ce fil.</div>
+          </div>
+        `;
+        return;
+      }
+
+      document.getElementById('statPosts').innerText = annonces.length;
+
+      container.innerHTML = annonces.map(a => `
+        <div class="post">
+          <div class="post-header">
+            <span>Auteur : ${a.author_name || 'Membre'}</span>
+            <span>${new Date(a.created_at).toLocaleDateString('fr-FR')}</span>
+          </div>
+          <div class="post-title">${a.title}</div>
+          <div class="post-body">${a.content}</div>
+        </div>
+      `).join('');
+    }
+
+    async function publishAnnouncement() {
+      const title = document.getElementById('postTitle').value.trim();
+      const content = document.getElementById('postContent').value.trim();
+
+      if (!title || !content) {
+        showToast("⚠️ Veuillez remplir le titre et le contenu du message.");
+        return;
+      }
+
+      const authorName = userProfile ? `${userProfile.prenom} ${userProfile.nom}` : currentUser.email;
+
+      const { error } = await _supabase
+        .from('annonces')
+        .insert([{ title: title, content: content, author_name: authorName }]);
+
+      if (error) {
+        showToast("Erreur : " + error.message);
+      } else {
+        showToast("📢 Annonce publiée avec succès !");
+        document.getElementById('postTitle').value = '';
+        document.getElementById('postContent').value = '';
+        loadAnnonces();
+      }
+    }
+
+    // 3. GALERIE MEDIA ET ALBUMS SUPABASE
+    async function loadPhotos() {
+      const container = document.getElementById('photosList');
+      const { data: photos, error } = await _supabase
+        .from('photos')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error || !photos || photos.length === 0) {
+        document.getElementById('statPhotos').innerText = 0;
+        container.innerHTML = "<p style='grid-column: 1/-1; color: var(--text-muted);'>Aucun média dans la galerie pour le moment.</p>";
+        return;
+      }
+
+      allPhotos = photos;
+      document.getElementById('statPhotos').innerText = photos.length;
+      populateDossiersDropdown(photos);
+      renderPhotos(allPhotos);
+    }
+
+    function populateDossiersDropdown(photos) {
+      const dossierSelect = document.getElementById('filterDossierSelect');
+      const dossiersDatalist = document.getElementById('dossiersList');
+      
+      const dossiers = [...new Set(photos.map(p => p.dossier || 'Général'))];
+
+      if (dossierSelect) {
+        dossierSelect.innerHTML = '<option value="ALL">📁 Tous les albums</option>' +
+          dossiers.map(d => `<option value="${d}">📁 ${d}</option>`).join('');
+      }
+
+      if (dossiersDatalist) {
+        dossiersDatalist.innerHTML = dossiers.map(d => `<option value="${d}">`).join('');
+      }
+    }
+
+    function renderPhotos(list) {
+      const container = document.getElementById('photosList');
+      if (list.length === 0) {
+        container.innerHTML = "<p style='grid-column: 1/-1; color: var(--text-muted);'>Aucun élément dans cet album.</p>";
+        return;
+      }
+
+      container.innerHTML = list.map(p => {
+        const isVideo = p.type === 'video';
+        let mediaHtml = '';
+
+        if (isVideo) {
+          if (p.url.includes('youtube.com') || p.url.includes('youtu.be')) {
+            const embedUrl = p.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/');
+            mediaHtml = `<iframe src="${embedUrl}" allowfullscreen></iframe>`;
+          } else {
+            mediaHtml = `<video controls><source src="${p.url}">Votre navigateur ne supporte pas ce format vidéo.</video>`;
+          }
+        } else {
+          mediaHtml = `<img src="${p.url}" alt="${p.title}" onerror="this.src='https://via.placeholder.com/300x200?text=Image+Indisponible'">`;
+        }
+
+        return `
+          <div class="photo-card">
+            ${mediaHtml}
+            <div class="photo-info">
+              <span style="font-size:0.75em; background:var(--sand-bg); padding:3px 8px; border-radius:4px; font-weight:700; color:var(--terracotta);">
+                📁 ${p.dossier || 'Général'}
+              </span>
+              <h4 style="margin-top:6px;">${p.title}</h4>
+              <p>${p.description || ''}</p>
+              <div class="photo-meta">
+                <span>Par : ${p.uploaded_by || 'Membre'}</span>
+                <span>${new Date(p.created_at).toLocaleDateString('fr-FR')}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterPhotos() {
+      const query = document.getElementById('searchPhoto').value.toLowerCase();
+      const selectedDossier = document.getElementById('filterDossierSelect').value;
+
+      const filtered = allPhotos.filter(p => {
+        const matchQuery = (p.title && p.title.toLowerCase().includes(query)) ||
+                           (p.description && p.description.toLowerCase().includes(query));
+        const matchDossier = selectedDossier === 'ALL' || (p.dossier || 'Général') === selectedDossier;
+
+        return matchQuery && matchDossier;
+      });
+
+      renderPhotos(filtered);
+    }
+
+    async function addPhoto() {
+      const title = document.getElementById('photoTitle').value.trim();
+      const url = document.getElementById('photoUrl').value.trim();
+      const desc = document.getElementById('photoDesc').value.trim();
+      const dossier = document.getElementById('mediaDossier').value.trim() || 'Général';
+      const type = document.getElementById('mediaType').value;
+
+      if (!title || !url) {
+        showToast("⚠️ Veuillez renseigner au moins le titre et le lien URL.");
+        return;
+      }
+
+      const uploadedBy = userProfile ? `${userProfile.prenom} ${userProfile.nom}` : currentUser.email;
+
+      const { error } = await _supabase
+        .from('photos')
+        .insert([{ 
+          title: title, 
+          url: url, 
+          description: desc, 
+          dossier: dossier, 
+          type: type, 
+          uploaded_by: uploadedBy 
+        }]);
+
+      if (error) {
+        showToast("Erreur : " + error.message);
+      } else {
+        showToast("🖼️ Média ajouté à l'album avec succès !");
+        document.getElementById('photoTitle').value = '';
+        document.getElementById('photoUrl').value = '';
+        document.getElementById('photoDesc').value = '';
+        document.getElementById('mediaDossier').value = '';
+        loadPhotos();
+      }
+    }
+
+    // 4. ÉMARGEMENT ET PRÉSENCES
+    async function loadPresenceList() {
+      const listEl = document.getElementById('confirmedAttendeesList');
+      const { data: presences, error } = await _supabase
+        .from('presences')
+        .select('user_id, member_name');
+
+      if (error || !presences || presences.length === 0) {
+        document.getElementById('statAttendees').innerText = 0;
+        listEl.innerHTML = "<li style='color: var(--text-muted);'>Aucun membre n'a encore confirmé sa présence.</li>";
+      } else {
+        document.getElementById('statAttendees').innerText = presences.length;
+        listEl.innerHTML = presences.map(p => `<li><strong>${p.member_name}</strong></li>`).join('');
+      }
+
+      if (currentUser) {
+        const myPresence = presences?.find(p => p.user_id === currentUser.id);
+        const statusBadge = document.getElementById('currentPresenceStatus');
+        const btn = document.getElementById('btnTogglePresence');
+
+        if (myPresence) {
+          isConfirmedPresent = true;
+          statusBadge.innerText = "Présence Confirmée ✔";
+          statusBadge.className = "status-badge status-present";
+          btn.innerText = "Annuler ma confirmation";
+          btn.style.backgroundColor = "#e74c3c";
+        } else {
+          isConfirmedPresent = false;
+          statusBadge.innerText = "Non confirmé ✖";
+          statusBadge.className = "status-badge status-absent";
+          btn.innerText = "✍️ Confirmer ma présence au Congrès";
+          btn.style.backgroundColor = "#27ae60";
+        }
+      }
+    }
+
+    async function togglePresence() {
+      if (!currentUser) return;
+
+      const memberName = userProfile ? `${userProfile.prenom} ${userProfile.nom}` : currentUser.email;
+
+      if (isConfirmedPresent) {
+        await _supabase.from('presences').delete().eq('user_id', currentUser.id);
+        showToast("Présence annulée.");
+      } else {
+        await _supabase.from('presences').insert([{ user_id: currentUser.id, member_name: memberName }]);
+        showToast("✔ Présence confirmée au Congrès !");
+      }
+
+      loadPresenceList();
+    }
+
+    // 5. CAISSE ET COTISATIONS
+    async function loadCotisations() {
+      const { data: cotisations, error } = await _supabase
+        .from('cotisations')
+        .select('montant');
+
+      if (error) return;
+
+      const totalCollecte = cotisations ? cotisations.reduce((sum, item) => sum + Number(item.montant), 0) : 0;
+      const pourcentage = Math.min(Math.round((totalCollecte / OBJECTIF_CONGRES) * 100), 100);
+
+      const barFill = document.querySelector('.progress-bar-fill');
+      const percentDisplay = document.getElementById('cotisationPercentText');
+      const totalDisplay = document.getElementById('cotisationTotalText');
+
+      if (barFill) {
+        barFill.style.width = pourcentage + '%';
+        barFill.innerText = pourcentage + '% Collecté';
+      }
+      if (percentDisplay) {
+        percentDisplay.innerText = pourcentage + '% Réalisé';
+      }
+      if (totalDisplay) {
+        totalDisplay.innerText = `${totalCollecte.toLocaleString('fr-FR')} FCFA sur ${OBJECTIF_CONGRES.toLocaleString('fr-FR')} FCFA`;
+      }
+    }
+
+    // 6. GESTION DU CHARGEMENT DE DOSSIER D'IMAGES/VIDÉOS LOCAL
+    document.addEventListener('DOMContentLoaded', () => {
+      const folderInput = document.getElementById('folderInput');
+      const localGallery = document.getElementById('localGallery');
+
+      if (folderInput && localGallery) {
+        folderInput.addEventListener('change', (event) => {
+          const files = event.target.files;
+          
+          // Libérer la mémoire des anciennes URLs locales
+          localObjectUrls.forEach(url => URL.revokeObjectURL(url));
+          localObjectUrls = [];
+          localGallery.innerHTML = '';
+
+          if (files.length === 0) return;
+
+          Array.from(files).forEach(file => {
+            if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) return;
+
+            const card = document.createElement('div');
+            card.className = 'gallery-card';
+
+            const fileURL = URL.createObjectURL(file);
+            localObjectUrls.push(fileURL);
+
+            if (file.type.startsWith('image/')) {
+              const img = document.createElement('img');
+              img.src = fileURL;
+              img.alt = file.name;
+              img.loading = 'lazy';
+              card.appendChild(img);
+            } else if (file.type.startsWith('video/')) {
+              const video = document.createElement('video');
+              video.src = fileURL;
+              video.controls = true;
+              video.preload = 'metadata';
+              card.appendChild(video);
+            }
+
+            localGallery.appendChild(card);
+          });
+
+          showToast(`📁 ${files.length} fichiers chargés depuis le dossier local.`);
+        });
+      }
+    });
+
+    // Lancement de la vérification de session
+    checkUserSession();
+  </script>
+</body>
+</html>
